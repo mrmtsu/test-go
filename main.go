@@ -26,6 +26,9 @@ func createMax() *echo.Echo {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Gzip())
 
+	e.Static("/css", "src/css")
+	e.Static("/js", "src/js")
+
 	return e
 }
 

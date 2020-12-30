@@ -1,11 +1,15 @@
 {% extends "../layout.html" %}
 
 {% block css %}
-<link rel="stylesheet" href="/css/article/index.css">
+<link rel="stylesheet" href="/css/article/new.css" />
 {% endblock %}
 
 {% block js %}
-<script src="/js/article/index.js"></script>
+<script src="/js/article/new.js"></script>
+{% endblock %}
+
+{% block title %}
+新規作成 | {{ block.Super }}
 {% endblock %}
 
 {% block content %}

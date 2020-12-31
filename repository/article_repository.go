@@ -3,15 +3,25 @@ package repository
 import (
 	"database/sql"
 	"go-blog/model"
+	"math"
 	"time"
 )
 
-// ArticleList ...
-func ArticleList() ([]*model.Article, error) {
-	query := `SELECT * FROM articles;`
+// ArticleListByCursor ...
+func ArticleListByCursor(cursor int) ([]*model.Article, error) {
+	if cursor <= 0 {
+		cursor = math.MaxInt32
+	}
 
-	var articles []*model.Article
-	if err := db.Select(&articles, query); err != nil {
+	query := `SELECT *
+	FROM articles
+	WHERE id < ?
+	ORDER BY id desc
+	LIMIT 10`
+
+	articles := make([]*model.Article, 0, 10)
+
+	if err := db.Select(&articles, query, cursor); err != nil {
 		return nil, err
 	}
 

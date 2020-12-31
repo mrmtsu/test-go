@@ -1,26 +1,43 @@
 package main
 
 import (
-	"net/http"
-	"strconv"
-	"time"
+	"go-blog/handler"
+	"go-blog/repository"
+	"log"
+	"os"
 
-	"github.com/flosch/pongo2"
+	_ "github.com/go-sql-driver/mysql" // Using MySQL driver
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
-const tmplPath = "src/template/"
-
+var db *sqlx.DB
 var e = createMax()
 
 func main() {
-	e.GET("/", articleIndex)
-	e.GET("/new", articleNew)
-	e.GET("/:id", articleShow)
-	e.GET("/:id/edit", articleEdit)
+	db = connectDB()
+	repository.SetDB(db)
+
+	e.GET("/", handler.ArticleIndex)
+	e.GET("/new", handler.ArticleNew)
+	e.GET("/:id", handler.ArticleShow)
+	e.GET("/:id/edit", handler.ArticleEdit)
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func connectDB() *sqlx.DB {
+	dsn := os.Getenv("DSN")
+	db, err := sqlx.Open("mysql", dsn)
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+	if err := db.Ping(); err != nil {
+		e.Logger.Fatal(err)
+	}
+	log.Println("db connection succeeded")
+	return db
 }
 
 func createMax() *echo.Echo {
@@ -34,54 +51,4 @@ func createMax() *echo.Echo {
 	e.Static("/js", "src/js")
 
 	return e
-}
-
-func articleIndex(c echo.Context) error {
-	data := map[string]interface{}{
-		"Message": "Article Index",
-		"Now":     time.Now(),
-	}
-	return render(c, "article/index.html", data)
-}
-
-func articleNew(c echo.Context) error {
-	data := map[string]interface{}{
-		"Message": "Article New",
-		"Now":     time.Now(),
-	}
-	return render(c, "article/new.html", data)
-}
-
-func articleShow(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	data := map[string]interface{}{
-		"Message": "Article Show",
-		"Now":     time.Now(),
-		"ID":      id,
-	}
-	return render(c, "article/show.html", data)
-}
-
-func articleEdit(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	data := map[string]interface{}{
-		"Message": "Article Edit",
-		"Now":     time.Now(),
-		"ID":      id,
-	}
-	return render(c, "article/edit.html", data)
-}
-
-func htmlBlob(file string, data map[string]interface{}) ([]byte, error) {
-	return pongo2.Must(pongo2.FromCache(tmplPath + file)).ExecuteBytes(data)
-}
-
-func render(c echo.Context, file string, data map[string]interface{}) error {
-	b, err := htmlBlob(file, data)
-	if err != nil {
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	return c.HTMLBlob(http.StatusOK, b)
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"go-blog/model"
 	"go-blog/repository"
 	"log"
 	"net/http"
@@ -55,4 +56,47 @@ func ArticleEdit(c echo.Context) error {
 	}
 
 	return render(c, "article/edit.html", data)
+}
+
+// ArticleCreateOutput ...
+type ArticleCreateOutput struct {
+	Article          *model.Article
+	Message          string
+	ValidationErrors []string
+}
+
+// ArticleCreate ...
+func ArticleCreate(c echo.Context) error {
+	var article model.Article
+
+	var out ArticleCreateOutput
+
+	if err := c.Bind(&article); err != nil {
+		c.Logger().Error(err.Error())
+
+		return c.JSON(http.StatusBadRequest, out)
+	}
+
+	if err := c.Validate(&article); err != nil {
+		c.Logger().Error(err.Error())
+
+		out.ValidationErrors = article.ValidationErrors(err)
+
+		return c.JSON(http.StatusUnprocessableEntity, out)
+	}
+
+	res, err := repository.ArticleCreate(&article)
+	if err != nil {
+		c.Logger().Error(err.Error())
+
+		return c.JSON(http.StatusInternalServerError, out)
+	}
+
+	id, _ := res.LastInsertId()
+
+	article.ID = int(id)
+
+	out.Article = &article
+
+	return c.JSON(http.StatusOK, out)
 }

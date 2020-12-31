@@ -3,7 +3,6 @@ package handler
 import (
 	"go-blog/model"
 	"go-blog/repository"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,16 +10,15 @@ import (
 	"github.com/labstack/echo"
 )
 
+// ArticleIndex ...
 func ArticleIndex(c echo.Context) error {
-	articles, err := repository.ArticleList()
+	articles, err := repository.ArticleListByCursor(0)
 	if err != nil {
-		log.Println(err.Error())
+		c.Logger().Error(err.Error())
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	data := map[string]interface{}{
-		"Message":  "Article Index Updated",
-		"Now":      time.Now(),
 		"Articles": articles,
 	}
 	return render(c, "article/index.html", data)

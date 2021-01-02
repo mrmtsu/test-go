@@ -18,10 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const mode = { method: '', url: '' };
   if (window.location.pathname.endsWith('new')) {
     mode.method = 'POST';
-    mode.url = '/';
+    mode.url = '/articles';
   } else if (window.location.pathname.endsWith('edit')) {
     mode.method = 'PATCH';
-    mode.url = `/${window.location.pathname.split('/')[1]}`;
+    mode.url = `/articles/${window.location.pathname.split('/')[2]}`;
 }
   const { method, url } = mode;
   for (let elm of inputs) {
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let status;
 
-    fetch(url, {
+    fetch(`/api${url}`, {
       method: method,
       headers: { 'X-CSRF-Token': csrfToken },
       body: fd

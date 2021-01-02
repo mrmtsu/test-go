@@ -21,11 +21,15 @@ func main() {
 	repository.SetDB(db)
 
 	e.GET("/", handler.ArticleIndex)
-	e.GET("/new", handler.ArticleNew)
-	e.GET("/:id", handler.ArticleShow)
-	e.GET("/:id/edit", handler.ArticleEdit)
-	e.POST("/", handler.ArticleCreate)
-	e.DELETE("/:id", handler.ArticleDelete)
+
+	e.GET("/articles", handler.ArticleIndex)
+	e.GET("/articles/new", handler.ArticleNew)
+	e.GET("/articles/:articleID", handler.ArticleShow)
+	e.GET("/articles/:articleID/edit", handler.ArticleEdit)
+
+	e.GET("/api/articles", handler.ArticleList)
+	e.POST("/api/articles", handler.ArticleCreate)
+	e.DELETE("/api/articles/:articleID", handler.ArticleDelete)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

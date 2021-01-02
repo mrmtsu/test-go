@@ -51,3 +51,18 @@ func ArticleCreate(article *model.Article) (sql.Result, error) {
 
 	return res, nil
 }
+
+// ArticleDelete ...
+func ArticleDelete(id int) error {
+	query := "DELETE FROM articles WHERE id = ?"
+
+	tx := db.MustBegin()
+
+	if _, err := tx.Exec(query, id); err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	return tx.Commit()
+}

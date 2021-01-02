@@ -13,6 +13,8 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
+var authUser = os.Getenv("AUTH_USER")
+var authPassword = os.Getenv("AUTH_PASSWORD")
 var db *sqlx.DB
 var e = createMax()
 
@@ -20,17 +22,21 @@ func main() {
 	db = connectDB()
 	repository.SetDB(db)
 
+	auth := e.Group("")
+
+	auth.Use(basicAuth())
+
 	e.GET("/", handler.ArticleIndex)
 
 	e.GET("/articles", handler.ArticleIndex)
-	e.GET("/articles/new", handler.ArticleNew)
+	auth.GET("/articles/new", handler.ArticleNew)
 	e.GET("/articles/:articleID", handler.ArticleShow)
-	e.GET("/articles/:articleID/edit", handler.ArticleEdit)
+	auth.GET("/articles/:articleID/edit", handler.ArticleEdit)
 
 	e.GET("/api/articles", handler.ArticleList)
-	e.POST("/api/articles", handler.ArticleCreate)
-	e.DELETE("/api/articles/:articleID", handler.ArticleDelete)
-	e.PATCH("/api/articles/:articleID", handler.ArticleUpdate)
+	auth.POST("/api/articles", handler.ArticleCreate)
+	auth.DELETE("/api/articles/:articleID", handler.ArticleDelete)
+	auth.PATCH("/api/articles/:articleID", handler.ArticleUpdate)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
@@ -71,4 +77,20 @@ type CustomValidator struct {
 // Validate ...
 func (cv *CustomValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
+}
+
+// basicAuth ...
+func basicAuth() echo.MiddlewareFunc {
+	var basicAuthValidator middleware.BasicAuthValidator
+
+	basicAuthValidator = func(username, password string, c echo.Context) (bool, error) {
+		if username == authUser && password == authPassword {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	middlewareFunc := middleware.BasicAuth(basicAuthValidator)
+
+	return middlewareFunc
 }

@@ -6,6 +6,7 @@ import (
 	"go-blog/repository"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -67,10 +68,16 @@ func ArticleShow(c echo.Context) error {
 func ArticleEdit(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("articleID"))
 
+	article, err := repository.ArticleGetByID(id)
+
+	if err != nil {
+		c.Logger().Error(err.Error())
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	data := map[string]interface{}{
-		"Message": "Article Edit",
-		"Now":     time.Now(),
-		"ID":      id,
+		"Article": article,
 	}
 
 	return render(c, "article/edit.html", data)
@@ -145,4 +152,54 @@ func ArticleList(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, articles)
+}
+
+// ArticleUpdateOutput ...
+type ArticleUpdateOutput struct {
+	Article          *model.Article
+	Message          string
+	ValidationErrors []string
+}
+
+// ArticleUpdate ...
+func ArticleUpdate(c echo.Context) error {
+	ref := c.Request().Referer()
+
+	refID := strings.Split(ref, "/")[4]
+
+	reqID := c.Param("articleID")
+
+	if reqID != refID {
+		return c.JSON(http.StatusBadRequest, "")
+	}
+
+	var article model.Article
+
+	var out ArticleUpdateOutput
+
+	if err := c.Bind(&article); err != nil {
+		return c.JSON(http.StatusBadRequest, out)
+	}
+
+	if err := c.Validate(&article); err != nil {
+		out.ValidationErrors = article.ValidationErrors(err)
+
+		return c.JSON(http.StatusUnprocessableEntity, out)
+	}
+
+	articleID, _ := strconv.Atoi(reqID)
+
+	article.ID = articleID
+
+	_, err := repository.ArticleUpdate(&article)
+
+	if err != nil {
+		out.Message = err.Error()
+
+		return c.JSON(http.StatusInternalServerError, out)
+	}
+
+	out.Article = &article
+
+	return c.JSON(http.StatusOK, out)
 }
